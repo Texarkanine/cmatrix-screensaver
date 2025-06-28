@@ -15,7 +15,6 @@ help:
 	@echo "Available targets:"
 	@echo "  install    - Install holiday-cmatrix to $(BINDIR)"
 	@echo "  uninstall  - Remove holiday-cmatrix from $(BINDIR)"
-	@echo "  clean      - Clean up temporary files"
 	@echo "  help       - Show this help message"
 	@echo ""
 	@echo "Installation requires root/sudo privileges."
@@ -65,13 +64,6 @@ check:
 		echo "⚠ cmatrix is not installed - holiday-cmatrix requires cmatrix to function"; \
 	fi
 
-# Clean up temporary files
-.PHONY: clean
-clean:
-	@echo "Cleaning up temporary files..."
-	@rm -f *~ *.tmp
-	@echo "✓ Clean complete!"
-
 # Test installation
 .PHONY: test
 test:
@@ -107,4 +99,4 @@ status:
 	fi
 	@if [ -f "$$HOME/bin/$(SCRIPT)" ]; then \
 		echo "✓ $(SCRIPT) is also installed in ~/bin/$(SCRIPT)"; \
-	fi 
+	fi

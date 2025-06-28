@@ -104,11 +104,12 @@ The script includes these pre-configured holiday themes:
 
 | Holiday             | Date Range        | Colors              | Special Effects                   |
 |---------------------|-------------------|---------------------|-----------------------------------|
-| **New Year**        | Dec 31 - Jan 2    | Yellow/White/Blue   | Rainbow + Character changes       |
-| **Valentine's Day** | Feb 12-16         | Red/Magenta/White   | Character changes                 |
-| **Pride Month**     | June 1-30         | Rainbow colors      | Character changes                 |
-| **4th of July**     | July 1-8          | Red/White/Blue      | Rainbow + Bold text               |
-| **Halloween**       | Oct 25-31         | Yellow/Red/Black    | Old-style + Character changes     |
+| **New Year Eve**    | Dec 31            | Yellow/White/Blue   | Bold text                         |
+| **New Year**        | Jan 1-2           | Yellow/White/Blue   | Bold text                         |
+| **Valentine's Day** | Feb 12-16         | Red/Magenta/White   | Character changes + All bold      |
+| **Pride Month**     | June 1-30         | Red/Yellow/Green/Blue/Magenta | Rainbow mode + Character changes       |
+| **4th of July**     | July 1-8          | Red/White/Blue      | Rainbow mode + All bold           |
+| **Halloween**       | Oct 25-31         | Magenta/Green       | Character changes + Bold text     |
 | **Thanksgiving**    | Nov 20-30         | Yellow/Red/Green    | Standard effects                  |
 | **Christmas**       | Dec 15-30         | Red/Green/White     | Bold text                         |
 
