@@ -22,25 +22,64 @@ Built-in themes cover major US holidays, with support for custom external theme 
 >
 > You can't really make interesting themes without it.
 
+## Installation
+
+### System-wide Installation (Recommended)
+
+Install `holiday-cmatrix` to `/usr/local/bin` for all users:
+
+```bash
+sudo make install
+```
+
+### User Installation
+
+Install to your personal `~/bin` directory:
+
+```bash
+make dev-install
+```
+
+Make sure `~/bin` is in your PATH, or add this to your `~/.bashrc` or `~/.zshrc`:
+```bash
+export PATH="$HOME/bin:$PATH"
+```
+
+### Check Installation
+
+Verify the script and dependencies are properly set up:
+
+```bash
+make check
+```
+
+### Uninstall
+
+Remove the system-wide installation:
+
+```bash
+sudo make uninstall
+```
+
 ## QuickStart
 
 1. **Run with current date theme:**
 
    ```bash
-   ./holiday-cmatrix
+   holiday-cmatrix
    ```
 
 2. **See all available themes:**
 
    ```bash
-   ./holiday-cmatrix --list
+   holiday-cmatrix --list
    ```
 
 3. **Run with a specific holiday theme:**
 
    ```bash
-   ./holiday-cmatrix -d 12-25    # Preview Christmas theme
-   ./holiday-cmatrix -d 07-04    # Preview 4th of July theme
+   holiday-cmatrix -d 12-25    # Preview Christmas theme
+   holiday-cmatrix -d 07-04    # Preview 4th of July theme
    ```
 
 That's it! The script automatically detects today's date and launches cmatrix with the appropriate holiday theme.
@@ -51,11 +90,11 @@ That's it! The script automatically detects today's date and launches cmatrix wi
 
 | Command                              | Description                                    |
 |--------------------------------------|------------------------------------------------|
-| `./holiday-cmatrix`                  | Run with today's date theme                    |
-| `./holiday-cmatrix -t`               | Show today's theme without running             |
-| `./holiday-cmatrix -l`               | List all configured themes                     | 
-| `./holiday-cmatrix -h`               | Show help and usage                            |
-| `./holiday-cmatrix --default 'args'` | Set custom default theme for non-holiday dates |
+| `holiday-cmatrix`                    | Run with today's date theme                    |
+| `holiday-cmatrix -t`                 | Show today's theme without running             |
+| `holiday-cmatrix -l`                 | List all configured themes                     | 
+| `holiday-cmatrix -h`                 | Show help and usage                            |
+| `holiday-cmatrix --default 'args'`   | Set custom default theme for non-holiday dates |
 
 ### Testing Specific Dates
 
@@ -63,16 +102,16 @@ Use the `-d` flag to test themes for specific dates:
 
 ```bash
 # Test Christmas theme
-./holiday-cmatrix -d 12-25 -t
+holiday-cmatrix -d 12-25 -t
 
 # Test Halloween theme  
-./holiday-cmatrix -d 10-31 -t
+holiday-cmatrix -d 10-31 -t
 
 # Test Pride Month theme
-./holiday-cmatrix -d 06-15 -t
+holiday-cmatrix -d 06-15 -t
 
 # Actually run New Year theme
-./holiday-cmatrix -d 01-01
+holiday-cmatrix -d 01-01
 ```
 
 Date format is `MM-DD` (month-day with leading zeros).
@@ -83,13 +122,13 @@ Use the `--default` option to set a custom theme for dates that don't match any 
 
 ```bash
 # Set a blue/white default theme
-./holiday-cmatrix --default '-a -C blue,white -u 1'
+holiday-cmatrix --default '-a -C blue,white -u 1'
 
 # Test a non-holiday date with custom default
-./holiday-cmatrix -d 03-15 -t --default '-a -C cyan,magenta -r -u 2'
+holiday-cmatrix -d 03-15 -t --default '-a -C cyan,magenta -r -u 2'
 
 # Use bold green theme as default
-./holiday-cmatrix --default '-a -C green -B -u 0'
+holiday-cmatrix --default '-a -C green -B -u 0'
 ```
 
 ### Built-in Holiday Themes
@@ -121,7 +160,7 @@ Create your own holiday themes using external theme files that override built-in
 
 **Custom File Location:**
 ```bash
-./holiday-cmatrix -f my-custom-themes
+holiday-cmatrix -f my-custom-themes
 ```
 
 #### External Theme File Format
@@ -175,14 +214,14 @@ The script supports all cmatrix parameters. Common options:
 
 **View themes with external file:**
 ```bash
-./holiday-cmatrix -f my-themes --list
+holiday-cmatrix -f my-themes --list
 ```
 
 **Test external theme override:**
 ```bash
 # Create custom Christmas theme (use printf for tabs)
 printf "Blue Christmas\t12-24:12-26\t-a -C blue,white,white -r -u 0\n" > custom-xmas
-./holiday-cmatrix -f custom-xmas -d 12-25 -t
+holiday-cmatrix -f custom-xmas -d 12-25 -t
 ```
 
 **Multiple holiday celebrations:**
@@ -219,8 +258,8 @@ Winter	01-01:03-19	-a -C blue,white,cyan -u 4  # Rest of winter
 **Want to see debug info?**
 ```bash
 # Check what theme would be used for a date
-./holiday-cmatrix -d 12-25 -t
+holiday-cmatrix -d 12-25 -t
 
 # See current date theme
-./holiday-cmatrix -t
+holiday-cmatrix -t
 ```
