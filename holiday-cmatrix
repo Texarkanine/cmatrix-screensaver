@@ -27,19 +27,19 @@ cat << 'EOF'
 # Built-in Holiday Themes
 # Format: theme_name<TAB>date_spec<TAB>cmatrix_args
 
-New Year Eve	12-31	-a -C yellow,white,blue -r -u 1 -k
-New Year	01-01:01-02	-a -C yellow,white,blue -r -u 1 -k
-Valentine's Day	02-12:02-16	-a -C red,magenta,white -u 2 -k
+New Year Eve	12-31	-a -C yellow,white,blue -u 1 -b 0
+New Year	01-01:01-02	-a -C yellow,white,blue -u 1 -b 0
+Valentine's Day	02-12:02-16	-a -C red,magenta,white -u 2 -k -B
 Pride Month	06-01:06-30	-a -C red,yellow,green,blue,magenta -u 3 -k
 4th of July	07-01:07-08	-a -C red,white,blue -r -u 1 -B
-Halloween	10-25:10-31	-a -C yellow,red,black -u 2 -k -o
+Halloween	10-25:10-31	-a -C magenta,mangenta,green,green -u 2 -k -b
 Thanksgiving	11-20:11-30	-a -C yellow,red,green -u 3
-Christmas	12-15:12-30	-a -C red,green,white -u 2 -B
+Christmas	12-15:12-30	-a -C red,green,white -u 2 -b
 EOF
 }
 
 # Default theme when no holiday matches (configurable via --default)
-DEFAULT_THEME="-a -C red,yellow -r -u 0"
+DEFAULT_THEME=""
 
 # =============================================================================
 # EXTERNAL THEME CONFIGURATION
