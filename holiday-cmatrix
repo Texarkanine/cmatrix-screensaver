@@ -1,0 +1,512 @@
+#!/bin/bash
+
+# holiday-cmatrix - Date-based holiday themed cmatrix screensaver
+# 
+# This script automatically selects holiday-themed cmatrix parameters based on the current date.
+# Edit the HOLIDAY_THEMES array below to customize built-in themes.
+# External themes can be loaded from ~/.config/holiday-cmatrix/themes or ./holiday-themes.conf
+# External themes take precedence over built-in themes for overlapping date ranges.
+
+set -euo pipefail
+
+# =============================================================================
+# HOLIDAY THEME CONFIGURATION
+# =============================================================================
+# 
+# Format: "START_DATE:END_DATE:CMATRIX_ARGS"
+# Date format: MM-DD (leading zeros required)
+# Cross-year ranges: Use separate entries (e.g., 12-15:12-31 and 01-01:01-15)
+# 
+# Available colors: green, red, blue, white, yellow, cyan, magenta, black
+# Key flags: -a (async), -b (bold), -B (all bold), -r (rainbow), -k (change chars), 
+#           -u [0-10] (update delay), -C [colors] (comma-separated), -o (old style)
+
+# Built-in holiday themes in tab-separated format
+get_builtin_themes() {
+cat << 'EOF'
+# Built-in Holiday Themes
+# Format: theme_name<TAB>date_spec<TAB>cmatrix_args
+
+New Year Eve	12-31	-a -C yellow,white,blue -u 1 -b 0
+New Year	01-01:01-02	-a -C yellow,white,blue -u 1 -b 0
+Valentine's Day	02-12:02-16	-a -C red,magenta,white -u 2 -k -B
+Pride Month	06-01:06-30	-a -C red,yellow,green,blue,magenta -u 3 -k
+4th of July	07-01:07-08	-a -C red,white,blue -r -u 1 -B
+Halloween	10-25:10-31	-a -C magenta,green -u 2 -k -b -o
+Thanksgiving	11-20:11-30	-a -C yellow,red,green -u 3
+Christmas	12-15:12-30	-a -C red,green,white -u 2 -b
+EOF
+}
+
+# Default theme when no holiday matches (configurable via --default)
+DEFAULT_THEME=""
+
+# =============================================================================
+# EXTERNAL THEME CONFIGURATION
+# =============================================================================
+
+# Default external theme file location
+DEFAULT_EXTERNAL_THEME_FILE="$HOME/.cmatrix-screensaver"
+
+# External theme file (configurable via -f flag)
+EXTERNAL_THEME_FILE=""
+
+
+
+# =============================================================================
+# THEME LOADING AND MERGING FUNCTIONS
+# =============================================================================
+
+# Parse themes from input (either file content or built-in themes)
+parse_themes() {
+    local input="$1"
+    local source_name="${2:-input}"
+    
+    # Process each line
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        # Strip comments - remove everything after first #
+        line="${line%%#*}"
+        
+        # Skip empty lines and whitespace-only lines
+        [[ -z "${line// }" ]] && continue
+        
+        # Extract the three tab-separated fields
+        if [[ "$line" =~ ^([^$'\t']+)$'\t'([^$'\t']+)$'\t'(.+)$ ]]; then
+            local theme_name="${BASH_REMATCH[1]}"
+            local date_spec="${BASH_REMATCH[2]}"
+            local args="${BASH_REMATCH[3]}"
+            
+            # Parse date specification 
+            local start_date end_date
+            if [[ "$date_spec" =~ ^([0-1][0-9]-[0-3][0-9])$ ]]; then
+                # Single date
+                start_date="${BASH_REMATCH[1]}"
+                end_date="$start_date"
+            elif [[ "$date_spec" =~ ^([0-1][0-9]-[0-3][0-9]):([0-1][0-9]-[0-3][0-9])$ ]]; then
+                # Date range
+                start_date="${BASH_REMATCH[1]}"
+                end_date="${BASH_REMATCH[2]}"
+            else
+                echo "Warning: Invalid date specification: $date_spec" >&2
+                continue
+            fi
+            
+            # Output in internal format
+            echo "$start_date:$end_date:$args"
+        elif [[ -n "${line// }" ]]; then
+            echo "Warning: Invalid theme format: $line" >&2
+        fi
+    done <<< "$input"
+}
+
+# Load external themes from file
+load_external_themes() {
+    local external_file="${EXTERNAL_THEME_FILE:-$DEFAULT_EXTERNAL_THEME_FILE}"
+    
+    # If no external file found, return empty
+    if [[ ! -f "$external_file" ]] || [[ ! -r "$external_file" ]]; then
+        return 0
+    fi
+    
+    # Read file content and parse it
+    local file_content
+    file_content=$(cat "$external_file")
+    parse_themes "$file_content" "$external_file"
+}
+
+# Load built-in themes
+load_builtin_themes() {
+    local builtin_content
+    builtin_content=$(get_builtin_themes)
+    parse_themes "$builtin_content" "built-in themes"
+}
+
+# Check if two date ranges overlap
+date_ranges_overlap() {
+    local start1="$1" end1="$2" start2="$3" end2="$4"
+    
+    local start1_day end1_day start2_day end2_day
+    start1_day=$(date_to_day_of_year "$start1")
+    end1_day=$(date_to_day_of_year "$end1")
+    start2_day=$(date_to_day_of_year "$start2")
+    end2_day=$(date_to_day_of_year "$end2")
+    
+    # Handle year-crossing ranges
+    if [[ $start1_day -gt $end1_day ]]; then
+        # Range 1 crosses year boundary
+        if [[ $start2_day -gt $end2_day ]]; then
+            # Both cross year boundary - they overlap
+            return 0
+        else
+            # Range 1 crosses, range 2 doesn't
+            if [[ $start2_day -ge $start1_day ]] || [[ $end2_day -le $end1_day ]]; then
+                return 0
+            fi
+        fi
+    elif [[ $start2_day -gt $end2_day ]]; then
+        # Range 2 crosses year boundary, range 1 doesn't
+        if [[ $start1_day -ge $start2_day ]] || [[ $end1_day -le $end2_day ]]; then
+            return 0
+        fi
+    else
+        # Neither range crosses year boundary
+        if [[ $start1_day -le $end2_day ]] && [[ $end1_day -ge $start2_day ]]; then
+            return 0
+        fi
+    fi
+    
+    return 1
+}
+
+
+
+# =============================================================================
+# HELPER FUNCTIONS
+# =============================================================================
+
+# Print usage information
+usage() {
+    cat << 'EOF'
+Usage: holiday-cmatrix [options]
+
+Date-based holiday themed cmatrix screensaver.
+
+Options:
+  -d, --date DATE       Test with specific date (MM-DD format)
+  -f, --file FILE       Use custom external theme file (default: ~/.cmatrix-screensaver)
+  -l, --list            List all configured holiday themes
+  -t, --test            Show theme for current date without running cmatrix
+      --default ARGS    Set custom default theme args (default: '-a -C red,yellow -r -u 0')
+  -h, --help            Show this help message
+
+Examples:
+  holiday-cmatrix                          # Run with current date theme
+  holiday-cmatrix -d 12-25                 # Test Christmas theme
+  holiday-cmatrix -t                       # Show current theme without running
+  holiday-cmatrix -l                       # List all themes
+  holiday-cmatrix -f my-themes             # Use custom theme file
+  holiday-cmatrix --default '-a -C blue,white -u 1'  # Set custom default theme
+
+Holiday themes are automatically selected based on the current date.
+Built-in themes can be customized by editing this script.
+External themes override built-in themes for overlapping date ranges.
+
+External theme file format (one theme per line, tab-separated):
+  theme_name<TAB>date_spec<TAB>cmatrix_args
+  # Comments start with # and are stripped from lines
+Date spec formats: MM-DD or MM-DD:MM-DD
+Example:
+  Custom Christmas<TAB>12-20:12-25<TAB>-a -C red,green -B
+  St Patrick's Day<TAB>03-17<TAB>-a -C green,white -u 2
+EOF
+}
+
+# Convert date to sortable format (handles year boundary)
+date_to_sort_key() {
+    local date_str="$1"
+    local month="${date_str%-*}"
+    local day="${date_str#*-}"
+    
+    # Convert to numbers for comparison
+    local month_num=$((10#$month))
+    local day_num=$((10#$day))
+    
+    # For sorting: Jan-Nov use normal order, Dec goes to end
+    # This puts New Year (Jan 1-2) right after New Year Eve (Dec 31)
+    if [[ $month_num -eq 12 ]]; then
+        # December dates: add 12 to month to sort after November
+        printf "%02d%02d" $((month_num + 12)) $day_num
+    else
+        # Jan-Nov: normal sorting
+        printf "%02d%02d" $month_num $day_num
+    fi
+}
+
+# Parse and load all themes with metadata for sorting
+load_all_themes_for_listing() {
+    local -a all_themes=()
+    
+    # Load external themes with metadata
+    local -a external_themes=()
+    mapfile -t external_themes < <(load_external_themes)
+    
+    # Process external themes
+    local external_file="${EXTERNAL_THEME_FILE:-$DEFAULT_EXTERNAL_THEME_FILE}"
+    if [[ -f "$external_file" && -r "$external_file" ]]; then
+        # Read the original theme names from file
+        while IFS=$'\t' read -r theme_name date_spec args || [[ -n "$theme_name" ]]; do
+            # Skip comments and empty lines
+            theme_name="${theme_name%%#*}"
+            [[ -z "${theme_name// }" ]] && continue
+            
+            # Parse date spec
+            local start_date end_date
+            if [[ "$date_spec" =~ ^([0-1][0-9]-[0-3][0-9])$ ]]; then
+                start_date="${BASH_REMATCH[1]}"
+                end_date="$start_date"
+            elif [[ "$date_spec" =~ ^([0-1][0-9]-[0-3][0-9]):([0-1][0-9]-[0-3][0-9])$ ]]; then
+                start_date="${BASH_REMATCH[1]}"
+                end_date="${BASH_REMATCH[2]}"
+            else
+                continue
+            fi
+            
+            local sort_key=$(date_to_sort_key "$start_date")
+            all_themes+=("$sort_key|$theme_name|$start_date|$end_date|External|$args")
+        done < "$external_file"
+    fi
+    
+    # Load built-in themes with metadata
+    local -a builtin_themes=()
+    mapfile -t builtin_themes < <(load_builtin_themes)
+    
+    for theme in "${builtin_themes[@]}"; do
+        local start_date="${theme%%:*}"
+        local remainder="${theme#*:}"
+        local end_date="${remainder%%:*}"
+        local args="${remainder#*:}"
+        
+        # Determine holiday name based on date ranges
+        local holiday_name=""
+        case "$start_date" in
+            "12-31") holiday_name="New Year Eve" ;;
+            "01-01"|"01-02") holiday_name="New Year" ;;
+            "02-"*) holiday_name="Valentine's Day" ;;
+            "06-"*) holiday_name="Pride Month" ;;
+            "07-"*) holiday_name="4th of July" ;;
+            "10-"*) holiday_name="Halloween" ;;
+            "11-"*) holiday_name="Thanksgiving" ;;
+            "12-15"|"12-"*) holiday_name="Christmas" ;;
+            *) holiday_name="Custom" ;;
+        esac
+        
+        local sort_key=$(date_to_sort_key "$start_date")
+        all_themes+=("$sort_key|$holiday_name|$start_date|$end_date|Built-in|$args")
+    done
+    
+    # Sort all themes by date and print
+    printf '%s\n' "${all_themes[@]}" | sort
+}
+
+# List all configured holiday themes
+list_themes() {
+    echo "Configured Holiday Themes (sorted by date):"
+    echo "============================================"
+    echo
+    printf "%-20s %-15s %-8s %s\n" "Holiday Period" "Date Range" "Source" "Cmatrix Args"
+    printf "%-20s %-15s %-8s %s\n" "$(printf '%*s' 20 '' | tr ' ' '-')" "$(printf '%*s' 15 '' | tr ' ' '-')" "$(printf '%*s' 8 '' | tr ' ' '-')" "$(printf '%*s' 30 '' | tr ' ' '-')"
+    
+    # Load and sort all themes
+    local -a sorted_themes=()
+    mapfile -t sorted_themes < <(load_all_themes_for_listing)
+    
+    for theme_line in "${sorted_themes[@]}"; do
+        # Parse the sorted theme line: sort_key|name|start|end|source|args
+        IFS='|' read -r sort_key holiday_name start_date end_date source args <<< "$theme_line"
+        
+        local date_range
+        if [[ "$start_date" == "$end_date" ]]; then
+            date_range="$start_date"
+        else
+            date_range="$start_date - $end_date"
+        fi
+        
+        printf "%-20s %-15s %-8s %s\n" "$holiday_name" "$date_range" "$source" "$args"
+    done
+    
+    echo
+    echo "Default theme: $DEFAULT_THEME"
+    echo
+    
+    # Show external theme file status
+    local external_file="${EXTERNAL_THEME_FILE:-$DEFAULT_EXTERNAL_THEME_FILE}"
+    local external_count=0
+    if [[ -f "$external_file" && -r "$external_file" ]]; then
+        external_count=$(grep -c $'^[^\t]*\t[^\t]*\t' "$external_file" 2>/dev/null || echo 0)
+        echo "External theme file: $external_file"
+        echo "  Status: ✓ Found ($external_count themes loaded)"
+        echo "  Note: External themes override built-in themes for overlapping date ranges"
+    else
+        echo "External theme file: $external_file"
+        echo "  Status: - Not found"
+    fi
+}
+
+# Convert MM-DD date to day of year for comparison
+date_to_day_of_year() {
+    local date_str="$1"
+    local current_year=$(date +%Y)
+    
+    # Handle year boundary for dates like 12-31 vs 01-01
+    if [[ "$date_str" =~ ^12- ]]; then
+        # December dates - use current year
+        date -d "${current_year}-${date_str}" +%j 2>/dev/null || echo "0"
+    elif [[ "$date_str" =~ ^01- ]] && [[ $(date +%m) == "12" ]]; then
+        # January dates when we're in December - use next year
+        date -d "$((current_year + 1))-${date_str}" +%j 2>/dev/null || echo "0"
+    else
+        # All other dates - use current year
+        date -d "${current_year}-${date_str}" +%j 2>/dev/null || echo "0"
+    fi
+}
+
+# Check if current date falls within a date range
+date_in_range() {
+    local start_date="$1"
+    local end_date="$2"
+    local test_date="$3"
+    
+    local start_day=$(date_to_day_of_year "$start_date")
+    local end_day=$(date_to_day_of_year "$end_date")
+    local test_day=$(date_to_day_of_year "$test_date")
+    
+    # Handle year boundary ranges (e.g., Dec 31 - Jan 2)
+    if [[ $start_day -gt $end_day ]]; then
+        # Range crosses year boundary
+        if [[ $test_day -ge $start_day ]] || [[ $test_day -le $end_day ]]; then
+            return 0
+        fi
+    else
+        # Normal range within same year
+        if [[ $test_day -ge $start_day ]] && [[ $test_day -le $end_day ]]; then
+            return 0
+        fi
+    fi
+    
+    return 1
+}
+
+# Find the theme for a given date (external themes take precedence)
+find_theme_for_date() {
+    local test_date="$1"
+    
+    # Load external themes separately to check them first
+    local -a external_themes=()
+    mapfile -t external_themes < <(load_external_themes)
+    
+    # Check external themes first (they have precedence)
+    for theme in "${external_themes[@]}"; do
+        local start_date="${theme%%:*}"
+        local remainder="${theme#*:}"
+        local end_date="${remainder%%:*}"
+        local args="${remainder#*:}"
+        
+        if date_in_range "$start_date" "$end_date" "$test_date"; then
+            echo "$args"
+            return 0
+        fi
+    done
+    
+    # Then check built-in themes
+    local -a builtin_themes=()
+    mapfile -t builtin_themes < <(load_builtin_themes)
+    
+    for theme in "${builtin_themes[@]}"; do
+        local start_date="${theme%%:*}"
+        local remainder="${theme#*:}"
+        local end_date="${remainder%%:*}"
+        local args="${remainder#*:}"
+        
+        if date_in_range "$start_date" "$end_date" "$test_date"; then
+            echo "$args"
+            return 0
+        fi
+    done
+    
+    echo "$DEFAULT_THEME"
+}
+
+# Get current date in MM-DD format
+get_current_date() {
+    date +%m-%d
+}
+
+# =============================================================================
+# MAIN LOGIC
+# =============================================================================
+
+main() {
+    local test_date=""
+    local list_only=false
+    local test_only=false
+    
+    # Parse command line arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -d|--date)
+                test_date="$2"
+                shift 2
+                ;;
+            -f|--file)
+                EXTERNAL_THEME_FILE="$2"
+                shift 2
+                ;;
+            -l|--list)
+                list_only=true
+                shift
+                ;;
+            -t|--test)
+                test_only=true
+                shift
+                ;;
+            --default)
+                DEFAULT_THEME="$2"
+                shift 2
+                ;;
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            *)
+                echo "Error: Unknown option '$1'" >&2
+                echo "Use --help for usage information." >&2
+                exit 1
+                ;;
+        esac
+    done
+    
+    # Handle list option
+    if [[ "$list_only" == true ]]; then
+        list_themes
+        exit 0
+    fi
+    
+    # Determine which date to use
+    local current_date
+    if [[ -n "$test_date" ]]; then
+        # Validate test date format
+        if ! [[ "$test_date" =~ ^[0-1][0-9]-[0-3][0-9]$ ]]; then
+            echo "Error: Invalid date format '$test_date'. Use MM-DD format (e.g., 12-25)" >&2
+            exit 1
+        fi
+        current_date="$test_date"
+    else
+        current_date=$(get_current_date)
+    fi
+    
+    # Find appropriate theme
+    local theme_args
+    theme_args=$(find_theme_for_date "$current_date")
+    
+    # Handle test mode
+    if [[ "$test_only" == true ]]; then
+        echo "Date: $current_date"
+        echo "Theme: cmatrix $theme_args"
+        exit 0
+    fi
+    
+    # Check if cmatrix is available
+    if ! command -v cmatrix >/dev/null 2>&1; then
+        echo "Error: cmatrix not found. Please install cmatrix first." >&2
+        exit 1
+    fi
+
+    # Launch cmatrix with the determined theme
+    # shellcheck disable=SC2086
+    exec cmatrix $theme_args
+}
+
+# Run main function if script is executed directly
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi
