@@ -22,65 +22,32 @@ Built-in themes cover major US holidays, with support for custom external theme 
 >
 > You can't really make interesting themes without it.
 
-## Installation
-
-### System-wide Installation (Recommended)
-
-Install `holiday-cmatrix` to `/usr/local/bin` for all users:
-
-```bash
-sudo make install
-```
-
-### User Installation
-
-Install to your personal `~/bin` directory:
-
-```bash
-make dev-install
-```
-
-Make sure `~/bin` is in your PATH, or add this to your `~/.bashrc` or `~/.zshrc`:
-```bash
-export PATH="$HOME/bin:$PATH"
-```
-
-### Check Installation
-
-Verify the script and dependencies are properly set up:
-
-```bash
-make check
-```
-
-### Uninstall
-
-Remove the system-wide installation:
-
-```bash
-sudo make uninstall
-```
-
 ## QuickStart
 
-1. **Run with current date theme:**
+1. **Install:**
 
-   ```bash
-   holiday-cmatrix
-   ```
+	```bash
+	sudo make install
+	```
 
-2. **See all available themes:**
+2. **Run with current date theme:**
 
-   ```bash
-   holiday-cmatrix --list
-   ```
+	```bash
+	holiday-cmatrix
+	```
 
-3. **Run with a specific holiday theme:**
+3. **See all available themes:**
 
-   ```bash
-   holiday-cmatrix -d 12-25    # Preview Christmas theme
-   holiday-cmatrix -d 07-04    # Preview 4th of July theme
-   ```
+	```bash
+	holiday-cmatrix --list
+	```
+
+4. **Run with a specific holiday theme:**
+
+	```bash
+	holiday-cmatrix -d 12-25    # Preview Christmas theme
+	holiday-cmatrix -d 07-04    # Preview 4th of July theme
+	```
 
 That's it! The script automatically detects today's date and launches cmatrix with the appropriate holiday theme.
 
