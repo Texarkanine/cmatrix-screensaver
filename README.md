@@ -1,6 +1,6 @@
 # Holiday CMatrix
 
-**Holiday CMatrix** is a date-aware wrapper for the cmatrix terminal screensaver that automatically applies themed color schemes and effects based on US holidays and the current date. Transform your terminal into a festive Matrix experience that changes throughout the year!
+**Holiday CMatrix** is a date-aware wrapper for the [cmatrix](https://github.com/abishekvashok/cmatrix) terminal screensaver that automatically applies themed color schemes and effects based on US holidays and the current date. Transform your terminal into a festive Matrix experience that changes throughout the year!
 
 - 🎄 **Christmas**: Red/green/white
 - 🎆 **4th of July**: Patriotic red/white/blue
@@ -12,6 +12,15 @@
 ... and more!
 
 Built-in themes cover major US holidays, with support for custom external theme files that can override defaults or add new celebrations.
+
+> ⚠️ **WARNING:** 
+> These themes rely on a contribution to the cmatrix project that has not been merged yet: [-C multicolor palette](https://github.com/abishekvashok/cmatrix/pull/200)
+> 
+> You can either
+> 1. build `cmatrix` from source at that commit, or
+> 2. wait for it to be merged and released
+>
+> You can't really make interesting themes without it.
 
 ## QuickStart
 
@@ -170,7 +179,7 @@ The script supports all cmatrix parameters. Common options:
 **Test external theme override:**
 ```bash
 # Create custom Christmas theme
-echo "12-24 12-26 -a -C blue,white,silver -r -u 0" > custom-xmas
+echo "12-24 12-26 -a -C blue,white,white -r -u 0" > custom-xmas
 ./holiday-cmatrix -f custom-xmas -d 12-25 -t
 ```
 
@@ -211,7 +220,3 @@ echo "12-24 12-26 -a -C blue,white,silver -r -u 0" > custom-xmas
 # See current date theme
 ./holiday-cmatrix -t
 ```
-
----
-
-**Note:** This script requires the `cmatrix` program to be installed. The holiday-cmatrix script will display an error if cmatrix is not found in your PATH. 
