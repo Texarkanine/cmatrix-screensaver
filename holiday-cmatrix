@@ -413,9 +413,6 @@ main() {
     if [[ -f "$external_file" && -r "$external_file" ]]; then
         echo "External themes loaded from: $external_file"
     fi
-    
-    echo "Starting in 2 seconds... (Ctrl+C to cancel)"
-    sleep 2
 
     # Launch cmatrix with the determined theme
     # shellcheck disable=SC2086
