@@ -126,23 +126,25 @@ Create your own holiday themes using external theme files that override built-in
 
 #### External Theme File Format
 
-Create a simple text file with one theme per line:
+Create a tab-separated text file with one theme per line:
 
 ```bash
 # Comments start with #
-# Format: MM-DD MM-DD cmatrix_arguments
+# Format: theme_name<TAB>date_spec<TAB>cmatrix_arguments
+# Date spec: MM-DD or MM-DD:MM-DD
+# Comments are stripped from lines (everything after #)
 
 # Override Christmas with custom magenta theme
-12-20 12-25 -a -C magenta,cyan,white -u 1 -B
+Custom Christmas	12-20:12-25	-a -C magenta,cyan,white -u 1 -B
 
 # Add St. Patrick's Day
-03-15 03-18 -a -C green,white -u 2
+St Patrick's Day	03-15:03-18	-a -C green,white -u 2
 
 # Custom summer theme for entire July
-07-01 07-31 -a -C yellow,blue,white -r -u 1
+Summer Vibes	07-01:07-31	-a -C yellow,blue,white -r -u 1
 
 # Earth Day theme
-04-22 04-22 -a -C green,blue -u 3 -k
+Earth Day	04-22	-a -C green,blue -u 3 -k
 ```
 
 #### Theme Precedence Rules
@@ -178,26 +180,27 @@ The script supports all cmatrix parameters. Common options:
 
 **Test external theme override:**
 ```bash
-# Create custom Christmas theme
-echo "12-24 12-26 -a -C blue,white,white -r -u 0" > custom-xmas
+# Create custom Christmas theme (use printf for tabs)
+printf "Blue Christmas\t12-24:12-26\t-a -C blue,white,white -r -u 0\n" > custom-xmas
 ./holiday-cmatrix -f custom-xmas -d 12-25 -t
 ```
 
 **Multiple holiday celebrations:**
 ```bash
-# my-themes file:
-02-14 02-14 -a -C red,magenta -u 1 -B     # Valentine's Day
-03-17 03-17 -a -C green,white -u 2        # St. Patrick's Day  
-04-01 04-01 -a -C yellow,magenta -u 0 -k  # April Fools
+# my-themes file (tab-separated):
+Valentine's Day	02-14	-a -C red,magenta -u 1 -B
+St Patrick's Day	03-17	-a -C green,white -u 2
+April Fools	04-01	-a -C yellow,magenta -u 0 -k
 ```
 
 **Creating seasonal themes:**
 ```bash
-# Seasonal theme file:
-03-20 06-19 -a -C green,yellow -u 2       # Spring
-06-20 09-21 -a -C yellow,blue -r -u 1     # Summer  
-09-22 12-20 -a -C red,yellow,green -u 3   # Fall
-12-21 03-19 -a -C blue,white,cyan -u 4    # Winter
+# Seasonal theme file (tab-separated):
+Spring	03-20:06-19	-a -C green,yellow -u 2
+Summer	06-20:09-21	-a -C yellow,blue -r -u 1
+Fall	09-22:12-20	-a -C red,yellow,green -u 3
+Winter Solstice	12-21	-a -C blue,white,cyan -u 4
+Winter	01-01:03-19	-a -C blue,white,cyan -u 4  # Rest of winter
 ```
 
 #### Troubleshooting
@@ -209,7 +212,8 @@ echo "12-24 12-26 -a -C blue,white,white -r -u 0" > custom-xmas
 
 **External themes not working?**
 - Confirm file path with `-f` flag
-- Check file format matches `MM-DD MM-DD args` pattern
+- Check file format uses tab separation: `theme_name<TAB>date_spec<TAB>args`
+- Verify date specs are valid: `MM-DD` or `MM-DD:MM-DD`
 - Look for warning messages about invalid formats
 
 **Want to see debug info?**

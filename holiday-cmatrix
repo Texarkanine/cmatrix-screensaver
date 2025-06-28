@@ -21,29 +21,22 @@ set -euo pipefail
 # Key flags: -a (async), -b (bold), -B (all bold), -r (rainbow), -k (change chars), 
 #           -u [0-10] (update delay), -C [colors] (comma-separated), -o (old style)
 
-declare -a HOLIDAY_THEMES=(
-    # New Year (Dec 31 - Jan 2)
-    "12-31:12-31:-a -C yellow,white,blue -r -u 1 -k"
-    "01-01:01-02:-a -C yellow,white,blue -r -u 1 -k"
-    
-    # Valentine's Day (Feb 12-16)
-    "02-12:02-16:-a -C red,magenta,white -u 2 -k"
-    
-    # Pride Month (June)
-    "06-01:06-30:-a -C red,yellow,green,blue,magenta -u 3 -k"
-    
-    # 4th of July (July 1-8)
-    "07-01:07-08:-a -C red,white,blue -r -u 1 -B"
-    
-    # Halloween (Oct 25-31)
-    "10-25:10-31:-a -C yellow,red,black -u 2 -k -o"
-    
-    # Thanksgiving (Nov 20-30)
-    "11-20:11-30:-a -C yellow,red,green -u 3"
-    
-    # Christmas (Dec 15-30)
-    "12-15:12-30:-a -C red,green,white -u 2 -B"
-)
+# Built-in holiday themes in tab-separated format
+get_builtin_themes() {
+cat << 'EOF'
+# Built-in Holiday Themes
+# Format: theme_name<TAB>date_spec<TAB>cmatrix_args
+
+New Year Eve	12-31	-a -C yellow,white,blue -r -u 1 -k
+New Year	01-01:01-02	-a -C yellow,white,blue -r -u 1 -k
+Valentine's Day	02-12:02-16	-a -C red,magenta,white -u 2 -k
+Pride Month	06-01:06-30	-a -C red,yellow,green,blue,magenta -u 3 -k
+4th of July	07-01:07-08	-a -C red,white,blue -r -u 1 -B
+Halloween	10-25:10-31	-a -C yellow,red,black -u 2 -k -o
+Thanksgiving	11-20:11-30	-a -C yellow,red,green -u 3
+Christmas	12-15:12-30	-a -C red,green,white -u 2 -B
+EOF
+}
 
 # Default theme when no holiday matches (configurable via --default)
 DEFAULT_THEME="-a -C red,yellow -r -u 0"
@@ -64,6 +57,48 @@ EXTERNAL_THEME_FILE=""
 # THEME LOADING AND MERGING FUNCTIONS
 # =============================================================================
 
+# Parse themes from input (either file content or built-in themes)
+parse_themes() {
+    local input="$1"
+    local source_name="${2:-input}"
+    
+    # Process each line
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        # Strip comments - remove everything after first #
+        line="${line%%#*}"
+        
+        # Skip empty lines and whitespace-only lines
+        [[ -z "${line// }" ]] && continue
+        
+        # Extract the three tab-separated fields
+        if [[ "$line" =~ ^([^$'\t']+)$'\t'([^$'\t']+)$'\t'(.+)$ ]]; then
+            local theme_name="${BASH_REMATCH[1]}"
+            local date_spec="${BASH_REMATCH[2]}"
+            local args="${BASH_REMATCH[3]}"
+            
+            # Parse date specification 
+            local start_date end_date
+            if [[ "$date_spec" =~ ^([0-1][0-9]-[0-3][0-9])$ ]]; then
+                # Single date
+                start_date="${BASH_REMATCH[1]}"
+                end_date="$start_date"
+            elif [[ "$date_spec" =~ ^([0-1][0-9]-[0-3][0-9]):([0-1][0-9]-[0-3][0-9])$ ]]; then
+                # Date range
+                start_date="${BASH_REMATCH[1]}"
+                end_date="${BASH_REMATCH[2]}"
+            else
+                echo "Warning: Invalid date specification: $date_spec" >&2
+                continue
+            fi
+            
+            # Output in internal format
+            echo "$start_date:$end_date:$args"
+        elif [[ -n "${line// }" ]]; then
+            echo "Warning: Invalid theme format: $line" >&2
+        fi
+    done <<< "$input"
+}
+
 # Load external themes from file
 load_external_themes() {
     local external_file="${EXTERNAL_THEME_FILE:-$DEFAULT_EXTERNAL_THEME_FILE}"
@@ -73,33 +108,17 @@ load_external_themes() {
         return 0
     fi
     
-    # Read and validate external themes
-    local -a external_themes=()
-    local line_num=0
-    
-    while IFS= read -r line || [[ -n "$line" ]]; do
-        ((line_num++))
-        
-        # Skip empty lines and comments
-        if [[ -z "$line" ]] || [[ "$line" =~ ^[[:space:]]*# ]]; then
-            continue
-        fi
-        
-        # Parse format: MM-DD MM-DD args (space separated)
-        if [[ "$line" =~ ^([0-1][0-9]-[0-3][0-9])[[:space:]]+([0-1][0-9]-[0-3][0-9])[[:space:]]+(.+)$ ]]; then
-            local start_date="${BASH_REMATCH[1]}"
-            local end_date="${BASH_REMATCH[2]}"
-            local args="${BASH_REMATCH[3]}"
-            # Convert to internal format for consistency
-            external_themes+=("$start_date:$end_date:$args")
-        else
-            echo "Warning: Invalid theme format in $external_file line $line_num: $line" >&2
-            echo "Expected format: MM-DD MM-DD cmatrix_args" >&2
-        fi
-    done < "$external_file"
-    
-    # Output external themes
-    printf '%s\n' "${external_themes[@]}"
+    # Read file content and parse it
+    local file_content
+    file_content=$(cat "$external_file")
+    parse_themes "$file_content" "$external_file"
+}
+
+# Load built-in themes
+load_builtin_themes() {
+    local builtin_content
+    builtin_content=$(get_builtin_themes)
+    parse_themes "$builtin_content" "built-in themes"
 }
 
 # Check if two date ranges overlap
@@ -172,12 +191,13 @@ Holiday themes are automatically selected based on the current date.
 Built-in themes can be customized by editing this script.
 External themes override built-in themes for overlapping date ranges.
 
-External theme file format (one theme per line):
-  MM-DD MM-DD cmatrix_args
-  # Comments start with #
+External theme file format (one theme per line, tab-separated):
+  theme_name<TAB>date_spec<TAB>cmatrix_args
+  # Comments start with # and are stripped from lines
+Date spec formats: MM-DD or MM-DD:MM-DD
 Example:
-  12-20 12-25 -a -C red,green -B
-  # My custom Christmas theme
+  Custom Christmas<TAB>12-20:12-25<TAB>-a -C red,green -B
+  St Patrick's Day<TAB>03-17<TAB>-a -C green,white -u 2
 EOF
 }
 
@@ -193,7 +213,7 @@ list_themes() {
     local external_file="${EXTERNAL_THEME_FILE:-$DEFAULT_EXTERNAL_THEME_FILE}"
     local external_count=0
     if [[ -f "$external_file" && -r "$external_file" ]]; then
-        external_count=$(grep -c "^[0-1][0-9]-[0-3][0-9] " "$external_file" 2>/dev/null || echo 0)
+        external_count=$(grep -c $'^[^\t]*\t[^\t]*\t' "$external_file" 2>/dev/null || echo 0)
         
         # Use a simple approach to show external themes
         if [[ $external_count -gt 0 ]]; then
@@ -202,7 +222,10 @@ list_themes() {
     fi
     
     # Show built-in themes
-    for theme in "${HOLIDAY_THEMES[@]}"; do
+    local -a builtin_themes=()
+    mapfile -t builtin_themes < <(load_builtin_themes)
+    
+    for theme in "${builtin_themes[@]}"; do
         local start_date="${theme%%:*}"
         local remainder="${theme#*:}"
         local end_date="${remainder%%:*}"
@@ -304,7 +327,10 @@ find_theme_for_date() {
     done
     
     # Then check built-in themes
-    for theme in "${HOLIDAY_THEMES[@]}"; do
+    local -a builtin_themes=()
+    mapfile -t builtin_themes < <(load_builtin_themes)
+    
+    for theme in "${builtin_themes[@]}"; do
         local start_date="${theme%%:*}"
         local remainder="${theme#*:}"
         local end_date="${remainder%%:*}"
