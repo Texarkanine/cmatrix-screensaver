@@ -430,16 +430,6 @@ main() {
         exit 1
     fi
 
-    # Display current theme (briefly)
-    echo "Holiday Cmatrix - Date: $current_date"
-    echo "Theme: cmatrix $theme_args"
-    
-    # Show external theme file status if applicable
-    local external_file="${EXTERNAL_THEME_FILE:-$DEFAULT_EXTERNAL_THEME_FILE}"
-    if [[ -f "$external_file" && -r "$external_file" ]]; then
-        echo "External themes loaded from: $external_file"
-    fi
-
     # Launch cmatrix with the determined theme
     # shellcheck disable=SC2086
     exec cmatrix $theme_args
