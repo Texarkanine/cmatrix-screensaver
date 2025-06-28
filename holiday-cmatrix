@@ -201,27 +201,62 @@ Example:
 EOF
 }
 
-# List all configured holiday themes
-list_themes() {
-    echo "Configured Holiday Themes:"
-    echo "========================="
-    echo
-    printf "%-20s %-15s %-8s %s\n" "Holiday Period" "Date Range" "Source" "Cmatrix Args"
-    printf "%-20s %-15s %-8s %s\n" "$(printf '%*s' 20 '' | tr ' ' '-')" "$(printf '%*s' 15 '' | tr ' ' '-')" "$(printf '%*s' 8 '' | tr ' ' '-')" "$(printf '%*s' 30 '' | tr ' ' '-')"
+# Convert date to sortable format (handles year boundary)
+date_to_sort_key() {
+    local date_str="$1"
+    local month="${date_str%-*}"
+    local day="${date_str#*-}"
     
-    # Show external themes first (if any)
+    # Convert to numbers for comparison
+    local month_num=$((10#$month))
+    local day_num=$((10#$day))
+    
+    # For sorting: Jan-Nov use normal order, Dec goes to end
+    # This puts New Year (Jan 1-2) right after New Year Eve (Dec 31)
+    if [[ $month_num -eq 12 ]]; then
+        # December dates: add 12 to month to sort after November
+        printf "%02d%02d" $((month_num + 12)) $day_num
+    else
+        # Jan-Nov: normal sorting
+        printf "%02d%02d" $month_num $day_num
+    fi
+}
+
+# Parse and load all themes with metadata for sorting
+load_all_themes_for_listing() {
+    local -a all_themes=()
+    
+    # Load external themes with metadata
+    local -a external_themes=()
+    mapfile -t external_themes < <(load_external_themes)
+    
+    # Process external themes
     local external_file="${EXTERNAL_THEME_FILE:-$DEFAULT_EXTERNAL_THEME_FILE}"
-    local external_count=0
     if [[ -f "$external_file" && -r "$external_file" ]]; then
-        external_count=$(grep -c $'^[^\t]*\t[^\t]*\t' "$external_file" 2>/dev/null || echo 0)
-        
-        # Use a simple approach to show external themes
-        if [[ $external_count -gt 0 ]]; then
-            printf "%-20s %-15s %-8s %s\n" "External themes" "various" "External" "($external_count themes from file)"
-        fi
+        # Read the original theme names from file
+        while IFS=$'\t' read -r theme_name date_spec args || [[ -n "$theme_name" ]]; do
+            # Skip comments and empty lines
+            theme_name="${theme_name%%#*}"
+            [[ -z "${theme_name// }" ]] && continue
+            
+            # Parse date spec
+            local start_date end_date
+            if [[ "$date_spec" =~ ^([0-1][0-9]-[0-3][0-9])$ ]]; then
+                start_date="${BASH_REMATCH[1]}"
+                end_date="$start_date"
+            elif [[ "$date_spec" =~ ^([0-1][0-9]-[0-3][0-9]):([0-1][0-9]-[0-3][0-9])$ ]]; then
+                start_date="${BASH_REMATCH[1]}"
+                end_date="${BASH_REMATCH[2]}"
+            else
+                continue
+            fi
+            
+            local sort_key=$(date_to_sort_key "$start_date")
+            all_themes+=("$sort_key|$theme_name|$start_date|$end_date|External|$args")
+        done < "$external_file"
     fi
     
-    # Show built-in themes
+    # Load built-in themes with metadata
     local -a builtin_themes=()
     mapfile -t builtin_themes < <(load_builtin_themes)
     
@@ -234,7 +269,8 @@ list_themes() {
         # Determine holiday name based on date ranges
         local holiday_name=""
         case "$start_date" in
-            "12-31"|"01-01"|"01-02") holiday_name="New Year" ;;
+            "12-31") holiday_name="New Year Eve" ;;
+            "01-01"|"01-02") holiday_name="New Year" ;;
             "02-"*) holiday_name="Valentine's Day" ;;
             "06-"*) holiday_name="Pride Month" ;;
             "07-"*) holiday_name="4th of July" ;;
@@ -244,7 +280,38 @@ list_themes() {
             *) holiday_name="Custom" ;;
         esac
         
-        printf "%-20s %-15s %-8s %s\n" "$holiday_name" "$start_date - $end_date" "Built-in" "$args"
+        local sort_key=$(date_to_sort_key "$start_date")
+        all_themes+=("$sort_key|$holiday_name|$start_date|$end_date|Built-in|$args")
+    done
+    
+    # Sort all themes by date and print
+    printf '%s\n' "${all_themes[@]}" | sort
+}
+
+# List all configured holiday themes
+list_themes() {
+    echo "Configured Holiday Themes (sorted by date):"
+    echo "============================================"
+    echo
+    printf "%-20s %-15s %-8s %s\n" "Holiday Period" "Date Range" "Source" "Cmatrix Args"
+    printf "%-20s %-15s %-8s %s\n" "$(printf '%*s' 20 '' | tr ' ' '-')" "$(printf '%*s' 15 '' | tr ' ' '-')" "$(printf '%*s' 8 '' | tr ' ' '-')" "$(printf '%*s' 30 '' | tr ' ' '-')"
+    
+    # Load and sort all themes
+    local -a sorted_themes=()
+    mapfile -t sorted_themes < <(load_all_themes_for_listing)
+    
+    for theme_line in "${sorted_themes[@]}"; do
+        # Parse the sorted theme line: sort_key|name|start|end|source|args
+        IFS='|' read -r sort_key holiday_name start_date end_date source args <<< "$theme_line"
+        
+        local date_range
+        if [[ "$start_date" == "$end_date" ]]; then
+            date_range="$start_date"
+        else
+            date_range="$start_date - $end_date"
+        fi
+        
+        printf "%-20s %-15s %-8s %s\n" "$holiday_name" "$date_range" "$source" "$args"
     done
     
     echo
@@ -252,11 +319,15 @@ list_themes() {
     echo
     
     # Show external theme file status
-    echo "External theme file: $external_file"
+    local external_file="${EXTERNAL_THEME_FILE:-$DEFAULT_EXTERNAL_THEME_FILE}"
+    local external_count=0
     if [[ -f "$external_file" && -r "$external_file" ]]; then
+        external_count=$(grep -c $'^[^\t]*\t[^\t]*\t' "$external_file" 2>/dev/null || echo 0)
+        echo "External theme file: $external_file"
         echo "  Status: ✓ Found ($external_count themes loaded)"
         echo "  Note: External themes override built-in themes for overlapping date ranges"
     else
+        echo "External theme file: $external_file"
         echo "  Status: - Not found"
     fi
 }
