@@ -4,7 +4,7 @@
 
 - 🎄 **Christmas**: Red/green/white
 - 🎆 **4th of July**: Patriotic red/white/blue
-- 🎃 **Halloween**: Spooky orange/red/black with old-style scrolling
+- 🎃 **Halloween**: Spooky purple/green with old-style scrolling
 - 🌈 **Pride Month**: Full rainbow color spectrum
 - ✨ **New Year**: Yellow/white/blue
 - ❤️ **Valentine's Day**: Romantic red/magenta/white palette
