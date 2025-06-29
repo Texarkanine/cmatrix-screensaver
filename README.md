@@ -93,7 +93,7 @@ The script includes these pre-configured holiday themes:
 | **Valentine's Day** | Feb 12-16         | Red/Magenta/White   | Character changes                 |
 | **Pride Month**     | June 1-30         | Rainbow colors      | Character changes                 |
 | **4th of July**     | July 1-8          | Red/White/Blue      | Rainbow + Bold text               |
-| **Halloween**       | Oct 25-31         | Yellow/Red/Black    | Old-style + Character changes     |
+| **Halloween**       | Oct 25-31         | Green/Purple        | Old-style + Character changes     |
 | **Thanksgiving**    | Nov 20-30         | Yellow/Red/Green    | Standard effects                  |
 | **Christmas**       | Dec 15-30         | Red/Green/White     | Bold text                         |
 
