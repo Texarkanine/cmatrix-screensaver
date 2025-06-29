@@ -140,20 +140,21 @@ holiday-cmatrix -f my-custom-themes
 
 Create a text file with one theme per line and tab-separated fields:
 
-```bash
+```
 # Comments start with #
-# Format: Name<TAB>Start: MM-DD[<TAB>End: MM-DD]<TAB>cmatrix_arguments
+# Format: Name<TAB>DateSpec<TAB>cmatrix_arguments
+# DateSpec can be: MM-DD (single date) or MM-DD:MM-DD (date range)
 
-# Override Christmas with custom magenta theme
-Christmas	12-20	12-25	-a -C magenta,cyan,white -u 1 -B
+# Override Christmas with custom magenta theme (date range)
+Christmas	12-20:12-25	-a -C magenta,cyan,white -u 1 -B
 
-# Add St. Patrick's Day
+# Add St. Patrick's Day (single date)
 St. Patrick's Day	03-17	-a -C green,white -u 2
 
-# Custom summer theme for entire July
-Summer	07-01	07-31	-a -C yellow,blue,white -r -u 1
+# Custom summer theme for entire July (date range)
+Summer	07-01:07-31	-a -C yellow,blue,white -r -u 1
 
-# Earth Day theme
+# Earth Day theme (single date)
 Earth Day	04-22	-a -C green,blue -u 3 -k
 ```
 
@@ -178,23 +179,23 @@ holiday-cmatrix -f my-themes --list
 **Test external theme override:**
 ```bash
 # Create custom Christmas theme
-printf "Christmas\t12-24\t12-26\t-a -C blue,white,white -r -u 0\n" > custom-xmas
+printf "Christmas\t12-24:12-26\t-a -C blue,white,white -r -u 0\n" > custom-xmas
 holiday-cmatrix -f custom-xmas -d 12-25 -t
 ```
 
 **Multiple holiday celebrations:**
 ```bash
 # my-themes file:
-Valentine's Day	02-14	02-14	-a -C red,magenta -u 1 -B
-St. Patrick's Day	03-17	03-17	-a -C green,white -u 2
-April Fools	04-01	04-01	-a -C yellow,magenta -u 0 -k
+Valentine's Day	02-14	-a -C red,magenta -u 1 -B
+St. Patrick's Day	03-17	-a -C green,white -u 2
+April Fools	04-01	-a -C yellow,magenta -u 0 -k
 ```
 
 **Creating seasonal themes:**
 ```bash
 # Seasonal theme file:
-Spring	03-20	06-19	-a -C green,yellow -u 2
-Summer	06-20	09-21	-a -C yellow,blue -r -u 1
-Fall	09-22	12-20	-a -C red,yellow,green -u 3
-Winter	12-21	03-19	-a -C blue,white,cyan -u 4
+Spring	03-20:06-19	-a -C green,yellow -u 2
+Summer	06-20:09-21	-a -C yellow,blue -r -u 1
+Fall	09-22:12-20	-a -C red,yellow,green -u 3
+Winter	12-21:03-19	-a -C blue,white,cyan -u 4
 ```
