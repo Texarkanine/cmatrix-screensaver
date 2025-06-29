@@ -46,7 +46,7 @@ DEFAULT_THEME=""
 # =============================================================================
 
 # Default external theme file location
-DEFAULT_EXTERNAL_THEME_FILE="$HOME/.cmatrix-screensaver"
+DEFAULT_EXTERNAL_THEME_FILE="$HOME/.holiday-cmatrix"
 
 # External theme file (configurable via -f flag)
 EXTERNAL_THEME_FILE=""
@@ -173,7 +173,7 @@ Date-based holiday themed cmatrix screensaver.
 
 Options:
   -d, --date DATE       Test with specific date (MM-DD format)
-  -f, --file FILE       Use custom external theme file (default: ~/.cmatrix-screensaver)
+  -f, --file FILE       Use custom external theme file (default: ~/.holiday-cmatrix)
   -l, --list            List all configured holiday themes
   -t, --test            Show theme for current date without running cmatrix
       --default ARGS    Set custom default theme args (default: '-a -C red,yellow -r -u 0')

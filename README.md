@@ -115,7 +115,7 @@ Create your own holiday themes using external theme files that override built-in
 
 **Default External File Location:**
 ```
-~/.cmatrix-screensaver
+~/.holiday-cmatrix
 ```
 
 **Custom File Location:**
