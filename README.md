@@ -98,7 +98,16 @@ The script includes these pre-configured holiday themes:
 | **Christmas**       | Dec 15-30         | Red/Green/White     | Bold text                         |
 
 
-### Custom Default Theme
+### Advanced Usage
+
+- [Custom Default Theme](#custom-default-theme)
+- [Custom External Themes](#custom-external-themes)
+  - [External Theme File Format](#external-theme-file-format)
+  - [Theme Precedence Rules](#theme-precedence-rules)
+- [CMatrix Parameters](#cmatrix-parameters)
+- [Examples](#examples)
+
+#### Custom Default Theme
 
 Use the `--default` option to set a custom theme for dates that don't match any holiday:
 
@@ -112,8 +121,6 @@ holiday-cmatrix -d 03-15 -t --default '-a -C cyan,magenta -r -u 2'
 # Use bold green theme as default
 holiday-cmatrix --default '-a -C green -B -u 0'
 ```
-
-### Advanced Usage
 
 #### Custom External Themes
 
@@ -129,7 +136,7 @@ Create your own holiday themes using external theme files that override built-in
 holiday-cmatrix -f my-custom-themes
 ```
 
-#### External Theme File Format
+##### External Theme File Format
 
 Create a text file with one theme per line and tab-separated fields:
 
@@ -150,7 +157,7 @@ Summer	07-01	07-31	-a -C yellow,blue,white -r -u 1
 Earth Day	04-22	-a -C green,blue -u 3 -k
 ```
 
-#### Theme Precedence Rules
+##### Theme Precedence Rules
 
 1. **External themes override built-in themes** for overlapping date ranges
 2. **Multiple themes per date range** are supported
