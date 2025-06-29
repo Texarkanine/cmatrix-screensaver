@@ -157,22 +157,9 @@ Earth Day	04-22	-a -C green,blue -u 3 -k
 3. **Built-in themes remain active** for non-overlapping dates
 4. **External themes are checked first** during date matching
 
-#### CMatrix Parameter Reference
+#### CMatrix Parameters
 
-The script supports all cmatrix parameters. Common options:
-
-| Parameter | Description |
-|-----------|-------------|
-| `-a` | Asynchronous scroll |
-| `-b` | Bold characters on |
-| `-B` | All bold characters |
-| `-C colors` | Comma-separated color list |
-| `-r` | Rainbow mode |
-| `-u delay` | Update delay (0-10) |
-| `-k` | Characters change while scrolling |
-| `-o` | Old-style scrolling |
-
-**Available colors:** green, red, blue, white, yellow, cyan, magenta, black
+The script supports all cmatrix parameters, but relies heavily on the as-yet-unmerged [-C multicolor palette](https://github.com/abishekvashok/cmatrix/pull/200) to really make interesting themes.
 
 #### Examples
 
@@ -184,7 +171,7 @@ holiday-cmatrix -f my-themes --list
 **Test external theme override:**
 ```bash
 # Create custom Christmas theme
-echo "Christmas	12-24	12-26	-a -C blue,white,white -r -u 0" > custom-xmas
+printf "Christmas\t12-24\t12-26\t-a -C blue,white,white -r -u 0\n" > custom-xmas
 holiday-cmatrix -f custom-xmas -d 12-25 -t
 ```
 
@@ -203,25 +190,4 @@ Spring	03-20	06-19	-a -C green,yellow -u 2
 Summer	06-20	09-21	-a -C yellow,blue -r -u 1
 Fall	09-22	12-20	-a -C red,yellow,green -u 3
 Winter	12-21	03-19	-a -C blue,white,cyan -u 4
-```
-
-#### Troubleshooting
-
-**Theme not showing up?**
-- Check date format is `MM-DD` with leading zeros
-- Verify external theme file exists and is readable
-- Use `--list` to see which themes are loaded
-
-**External themes not working?**
-- Confirm file path with `-f` flag
-- Check file format matches `MM-DD MM-DD args` pattern
-- Look for warning messages about invalid formats
-
-**Want to see debug info?**
-```bash
-# Check what theme would be used for a date
-holiday-cmatrix -d 12-25 -t
-
-# See current date theme
-holiday-cmatrix -t
 ```
