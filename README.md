@@ -131,23 +131,23 @@ holiday-cmatrix -f my-custom-themes
 
 #### External Theme File Format
 
-Create a simple text file with one theme per line:
+Create a text file with one theme per line and tab-separated fields:
 
 ```bash
 # Comments start with #
-# Format: Name<TAB>MM-DD<TAB>MM-DD<TAB>cmatrix_arguments
+# Format: Name<TAB>Start: MM-DD[<TAB>End: MM-DD]<TAB>cmatrix_arguments
 
 # Override Christmas with custom magenta theme
 Christmas	12-20	12-25	-a -C magenta,cyan,white -u 1 -B
 
 # Add St. Patrick's Day
-St. Patrick's Day	03-15	03-18	-a -C green,white -u 2
+St. Patrick's Day	03-17	-a -C green,white -u 2
 
 # Custom summer theme for entire July
 Summer	07-01	07-31	-a -C yellow,blue,white -r -u 1
 
 # Earth Day theme
-Earth Day	04-22	04-22	-a -C green,blue -u 3 -k
+Earth Day	04-22	-a -C green,blue -u 3 -k
 ```
 
 #### Theme Precedence Rules
